@@ -1,103 +1,77 @@
 const { Account } = require('./account.model');
 const messages = require('../../translation/messages.json');
-const { jwtTokens } = require('../../utils/jwt-helper');
-
-const loginUser = async ({ email, password }) => {
-  let message;
-  const account = await Account.findOne({ email });
-  if (account) {
-    if (await account.isAMatchPassword(password)) {
-      // sign a token
-      const { _id, first_name, last_name, role } = account;
-      const { accessToken } = jwtTokens({ _id, first_name, last_name, role });
-      message = messages['ACT-LOGIN-SUCCESS'];
-      account.last_login = Date.now();
-      account.save();
-      return { isSuccess: true, account, message, accessToken };
-    } else {
-      message = messages['ACT-INVALID-LOGIN'];
-      return { isSuccess: false, message };
-    }
-  }
-  message = messages['USER-NOT-FOUND'];
-  return { isSuccess: false, message };
-};
 
 const createAccount = async ({
-  email,
-  password,
-  first_name,
-  last_name,
-  mda,
-  phone_number,
-  organization,
-  region,
-  role,
-  address,
+    first_name,
+    last_name,
+    username,
+    date_of_birth,
 }) => {
   try {
     let message;
-    const exist = await Account.exists({ email });
+    const exist = await Account.exists({ username });
     if (exist) {
-      message = messages['ACT-EMAIL-EXIST'];
+      message = messages['ACT-USERNAME-EXIST'];
       return { isSuccess: false, message };
     }
-    const hashPassword = await Account.hashPassword(password);
+    const prefix = `${first_name.slice(0, 1)}${last_name.slice(0,1)}`
     const account = await Account.create({
-      email,
+      name_prefix: prefix,
       first_name,
       last_name,
-      password: hashPassword,
-      mda,
-      phone_number,
-      organization,
-      region,
-      role,
-      address,
+      username,
+      date_of_birth,
     });
     if (account) {
-      const loggedIn = await loginUser({ email, password });
       message = messages['ACT-LOGIN-SUCCESS'];
-      if (loggedIn) {
-        return { isSuccess: true, account, message, accessToken: loggedIn.accessToken };
-      }
+      return { isSuccess: true, message, account: formatAccountResponse(account) };
     }
   } catch (error) {
     return { isSuccess: false, message: error };
   }
 };
 
-const changePassword = async ({ email, password, new_password }) => {
-  let message;
-  const account = await Account.findOne({ email });
-  if (account) {
-    if (await account.isAMatchPassword(password)) {
-      account.password = await Account.hashPassword(new_password);
-      account.timestamp = { type: Date, default: Date.now };
-      await account.save();
-      message = messages['ACT-PASSWORD-RESET-SUCCESS'];
-      return { isSuccess: true, message };
-    } else {
-      message = messages['WRONG-PASSWORD-CODE'];
+const formatAccountResponse = (account) => {
+    const {
+      name_prefix,
+      first_name,
+      last_name,
+      username,
+      date_of_birth
+    } = account;
+  
+    return {
+      name_prefix,
+      first_name,
+      last_name,
+      username,
+      date_of_birth
+    };
+  };
+
+  const getUsers = async () => {
+    try {
+      const users = await Account.find({});
+      if (users) {
+        return { isSuccess: true, data: users };
+      }
+    } catch (error) {
+      const message = messages['NO-USER-FOUND'];
       return { isSuccess: false, message };
     }
-  } else {
-    message = messages['WRONG-CREDENTIALS'];
-    return { isSuccess: false, message };
-  }
-};
+  };
 
-module.exports = { loginUser, createAccount, changePassword };
 
-// .select(
-//   'id',
-//   'email',
-//   'first_name',
-//   'last_name',
-//   'phone_number',
-//   'mda',
-//   'organization',
-//   'region',
-//   'role',
-//   'address'
-// );
+  const deleteAUser = async (username) => {
+    let message;
+    try {
+      await Account.deleteOne({ username });
+      message = messages['USER-DELETE-SUCCESS'];
+      return { isSuccess: true, message };
+    } catch (error) {
+      message = messages['USER-DELETE-ERROR'];
+      return { isSuccess: false, message };
+    }
+  };
+
+module.exports = { createAccount, getUsers, deleteAUser };

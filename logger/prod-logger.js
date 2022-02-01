@@ -9,7 +9,7 @@ const buildProdLogger = () => {
       new transports.Console({
         filename: 'info.log',
         level: 'info',
-        format: combine(timestamp(), errors({ stack: tue }), json()),
+        format: combine(timestamp(), errors({ stack: true }), json()),
       }),
       new transports.MongoDB({
         db: configDB.database.endPoint,

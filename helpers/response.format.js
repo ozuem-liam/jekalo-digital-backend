@@ -1,5 +1,5 @@
 const HttpStatusCode = require('../models/HttpStatusCode');
-const LMResponse = require('../models/LMResponse');
+const LMResponse = require('../models/JDResponse');
 
 const sendSuccess = ({ 
   response, 
