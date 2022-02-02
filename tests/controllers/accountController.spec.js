@@ -45,4 +45,33 @@ describe('AccountController', async () => {
     assert.strictEqual(responseData.message, messages['ACT-CREATED-SUCCESS']);
     assert.strictEqual(Object.keys(responseData.errors).length, 0);
   });
+  it('Get All Account - Success', async () => {
+    const request = {
+      body: {},
+    };
+    sandBox
+      .stub(accountService, 'getUsers')
+      .returns({ isSuccess: true });
+    const response = httpMocks.createResponse();
+    await accountController.getUsers(request, response);
+
+    const responseData = response._getData();
+    assert.strictEqual(response.statusCode, HttpStatusCode.SUCCESS);
+    assert.strictEqual(Object.keys(responseData.errors).length, 0);
+  });
+  it('Delete A User - Success', async () => {
+    const request = {
+      params: { ...accountMock.deleteAUserMockRequest },
+    };
+    sandBox
+      .stub(accountService, 'deleteAUser')
+      .returns({ isSuccess: true, message: messages['USER-DELETE-SUCCESS'] });
+    const response = httpMocks.createResponse();
+    await accountController.deleteAUser(request, response);
+
+    const responseData = response._getData();
+    assert.strictEqual(response.statusCode, HttpStatusCode.SUCCESS);
+    assert.strictEqual(responseData.message, messages['USER-DELETE-SUCCESS']);
+    assert.strictEqual(Object.keys(responseData.errors).length, 0);
+  });
 });
